@@ -13,6 +13,8 @@ services:
       - ./data:/app/data
       - /home/juan/.local/google-cloud:/opt/google-cloud-host:ro
       - /home/juan/.config/gcloud:/root/.config/gcloud:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   mcp:
     build: .
@@ -28,3 +30,5 @@ services:
       - ./data:/app/data
       - /home/juan/.local/google-cloud:/opt/google-cloud-host:ro
       - /home/juan/.config/gcloud:/root/.config/gcloud:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

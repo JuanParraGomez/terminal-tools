@@ -63,3 +63,21 @@ def test_langgraph_capabilities_endpoint() -> None:
     resp = client.get("/langgraph/capabilities")
     assert resp.status_code == 200
     assert "enabled" in resp.json()
+
+
+def test_create_disposable_artifact_endpoint() -> None:
+    client = TestClient(app)
+    resp = client.post(
+        "/repo/langgraph/disposable",
+        json={
+            "user_goal": "crea un demo temporal hola mundo",
+            "file_name": "hola_demo.py",
+            "content": "print('hola mundo')\n",
+            "content_type": "code",
+            "scope": "langgraph_agent_server",
+        },
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["classified_as_disposable"] is True
+    assert body["file_path"].endswith("hola_demo.py")

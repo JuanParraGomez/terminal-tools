@@ -101,6 +101,23 @@ def terminal_edit_repo_file(relative_path: str, content: str, mode: str = "overw
 
 
 @mcp.tool()
+def terminal_create_disposable_artifact(
+    user_goal: str,
+    file_name: str,
+    content: str,
+    content_type: str = "code",
+    scope: str | None = "langgraph_agent_server",
+) -> dict[str, Any]:
+    return get_repo_ops_service().create_disposable_artifact(
+        user_goal=user_goal,
+        file_name=file_name,
+        content=content,
+        content_type=content_type,
+        scope=scope,
+    )
+
+
+@mcp.tool()
 def terminal_delegate_complex_task(user_goal: str, context: dict[str, Any] | None = None, max_iterations: int = 3) -> dict[str, Any]:
     return get_repo_ops_service().delegate_complex_task(
         user_goal=user_goal,

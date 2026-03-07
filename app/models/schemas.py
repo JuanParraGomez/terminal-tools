@@ -294,6 +294,25 @@ class RepoEditFileResponse(BaseModel):
     bytes_written: int
 
 
+class DisposableArtifactRequest(BaseModel):
+    user_goal: str = Field(min_length=3)
+    file_name: str = Field(min_length=3)
+    content: str = Field(min_length=1)
+    content_type: str = "code"
+    scope: str | None = "langgraph_agent_server"
+
+
+class DisposableArtifactResponse(BaseModel):
+    ok: bool
+    classified_as_disposable: bool
+    reason: str
+    task_id: str
+    trash_path: str
+    file_path: str
+    content_type: str
+    bytes_written: int
+
+
 class DelegateComplexTaskRequest(BaseModel):
     user_goal: str = Field(min_length=1)
     context: dict[str, Any] = Field(default_factory=dict)

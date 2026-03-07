@@ -115,6 +115,7 @@ Si hay duda, se prioriza la más restrictiva.
 - `POST /repo/langgraph/structure`
 - `POST /repo/langgraph/tests`
 - `POST /repo/langgraph/edit`
+- `POST /repo/langgraph/disposable`
 - `GET /langgraph/capabilities`
 - `POST /delegate/complex`
 - `POST /route`
@@ -148,6 +149,7 @@ Si hay duda, se prioriza la más restrictiva.
 - `terminal_list_repo_structure`
 - `terminal_run_repo_tests`
 - `terminal_edit_repo_file`
+- `terminal_create_disposable_artifact`
 - `terminal_delegate_complex_task`
 - `terminal_get_langgraph_capabilities`
 - `terminal_run_command`
@@ -220,6 +222,16 @@ curl -sS -X POST http://127.0.0.1:8090/trash/create \
 curl -sS -X POST http://127.0.0.1:8090/trash/cleanup \
   -H 'Content-Type: application/json' \
   -d '{"dry_run":true}'
+
+curl -sS -X POST http://127.0.0.1:8090/repo/langgraph/disposable \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "user_goal":"crea un hola mundo temporal para prueba rapida",
+    "file_name":"hello_world.py",
+    "content":"print(\"hola mundo\")\n",
+    "content_type":"code",
+    "scope":"langgraph_agent_server"
+  }'
 ```
 
 ## Ejemplo MCP initialize
@@ -242,6 +254,7 @@ curl -i -sS -X POST http://127.0.0.1:8091/mcp/ \
 - TTL por defecto: `7` días
 - Cleanup automático en startup y manual por API/MCP
 - No se borra fuera de `trash_root`
+- Artefactos claramente temporales (`hola mundo`, demo, snippet, ejemplo one-shot) pueden enviarse directo a `trash` mediante `POST /repo/langgraph/disposable`.
 
 ## Integración `langgraph-agent-server`
 - Repo autorizado para trabajo incremental: `/home/juan/Documents/langgraph-agent-server`

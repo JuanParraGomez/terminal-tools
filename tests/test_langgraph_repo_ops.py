@@ -6,6 +6,7 @@ from pathlib import Path
 
 from app.core.settings import Settings
 from app.security.path_policy_service import PathPolicyService
+from app.security.validator import SecurityError
 from app.security.validator import SecurityValidator
 from app.services.executor import CommandExecutor
 from app.services.langgraph_service import LanggraphService
@@ -106,6 +107,7 @@ def _make_repo_ops(tmp_path: Path) -> tuple[RepoOpsService, Path]:
             path_policy=policy,
             executor=executor,
             langgraph_service=langgraph_service,
+            trash_service=TrashService(settings),
         ),
         repo_root,
     )
@@ -151,6 +153,35 @@ def test_run_repo_tests_and_edit(tmp_path: Path) -> None:
     result = repo_ops.run_repo_tests(pytest_args=["-q"], timeout_seconds=120)
     assert result["command"][0:3] == ["python3", "-m", "pytest"]
     assert result["ok"] is True
+
+
+def test_create_disposable_artifact_goes_to_trash(tmp_path: Path) -> None:
+    repo_ops, repo_root = _make_repo_ops(tmp_path)
+    created = repo_ops.create_disposable_artifact(
+        user_goal="crea un hola mundo temporal para prueba rapida",
+        file_name="hello_world.py",
+        content="print('hola mundo')\n",
+        content_type="code",
+    )
+    assert created["classified_as_disposable"] is True
+    assert "/data/trash/" in created["file_path"]
+    assert Path(created["file_path"]).exists()
+    assert str(Path(created["file_path"]).parent).startswith(str(repo_root / "data" / "trash"))
+
+
+def test_non_disposable_artifact_is_rejected(tmp_path: Path) -> None:
+    repo_ops, _ = _make_repo_ops(tmp_path)
+    try:
+        repo_ops.create_disposable_artifact(
+            user_goal="crea el agente principal de produccion",
+            file_name="core_agent.py",
+            content="class CoreAgent:\n    pass\n",
+            content_type="code",
+        )
+    except SecurityError as exc:
+        assert "not classified as disposable" in str(exc)
+    else:
+        raise AssertionError("expected SecurityError")
 
 
 def test_delegate_complex_task_enabled_and_unavailable_fallback(tmp_path: Path) -> None:

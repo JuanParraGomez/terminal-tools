@@ -89,6 +89,7 @@ def get_repo_ops_service() -> RepoOpsService:
         path_policy=get_path_policy_service(),
         executor=get_executor(),
         langgraph_service=get_langgraph_service(),
+        trash_service=get_trash_service(),
     )
 
 

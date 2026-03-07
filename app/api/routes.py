@@ -39,6 +39,8 @@ from app.models.schemas import (
     ToolTaskRequest,
     DelegateComplexTaskRequest,
     DelegateComplexTaskResponse,
+    DisposableArtifactRequest,
+    DisposableArtifactResponse,
     LanggraphCapabilitiesResponse,
     TrashCleanupRequest,
     TrashCleanupResponse,
@@ -214,6 +216,21 @@ def edit_langgraph_repo_file(payload: RepoEditFileRequest) -> RepoEditFileRespon
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return RepoEditFileResponse(**data)
+
+
+@router.post("/repo/langgraph/disposable", response_model=DisposableArtifactResponse)
+def create_langgraph_disposable_artifact(payload: DisposableArtifactRequest) -> DisposableArtifactResponse:
+    try:
+        data = get_repo_ops_service().create_disposable_artifact(
+            user_goal=payload.user_goal,
+            file_name=payload.file_name,
+            content=payload.content,
+            content_type=payload.content_type,
+            scope=payload.scope,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return DisposableArtifactResponse(**data)
 
 
 @router.get("/langgraph/capabilities", response_model=LanggraphCapabilitiesResponse)
