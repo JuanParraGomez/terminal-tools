@@ -19,6 +19,20 @@ class RoutingService:
         if request.target_environment.lower() == "google":
             return self._select_google(goal, available_tools)
 
+        is_complex = (
+            request.complexity >= 4
+            or request.requires_iteration
+            or self._contains(goal, "langgraph_keywords")
+            or any(k in goal for k in ["investig", "multi", "orquest", "subagente", "sintetiza"])
+        )
+        if is_complex and "langgraph_agent_server" in available_tools:
+            return self._mk(
+                "langgraph_agent_server",
+                "langgraph_complex",
+                "Complex multi-step task delegated to langgraph-agent-server",
+                ["repos", "scripts", "constraints", "security", "workdirs"],
+            )
+
         if request.needs_plan or request.needs_second_opinion or self._contains(goal, "claude_keywords"):
             if "claude" in available_tools:
                 return self._mk("claude", "claude_review", "Needs planning/review", ["repos", "git_status", "constraints"])

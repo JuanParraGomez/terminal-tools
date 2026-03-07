@@ -42,6 +42,15 @@ def test_trash_endpoints() -> None:
     client = TestClient(app)
     created = client.post("/trash/create", json={"task_id": "api-test", "label": "tmp"})
     assert created.status_code == 200
+    created_scoped = client.post("/trash/create", json={"task_id": "api-test-lg", "label": "tmp", "scope": "langgraph_agent_server"})
+    assert created_scoped.status_code == 200
     listed = client.get("/trash")
     assert listed.status_code == 200
     assert "items" in listed.json()
+
+
+def test_langgraph_capabilities_endpoint() -> None:
+    client = TestClient(app)
+    resp = client.get("/langgraph/capabilities")
+    assert resp.status_code == 200
+    assert "enabled" in resp.json()

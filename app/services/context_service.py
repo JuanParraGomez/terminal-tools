@@ -10,6 +10,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
+import httpx
+
 from app.core.settings import Settings
 from app.core.utils import safe_env_metadata
 from app.security.path_policy_service import PathPolicyService
@@ -70,6 +72,7 @@ class ContextService:
         scripts = self._detect_scripts()
         repos = self._detect_repos()
         google_context = self._detect_google_context(detected_binaries)
+        langgraph_status = self._detect_langgraph_status()
 
         snapshot = {
             "context_id": context_id,
@@ -95,18 +98,48 @@ class ContextService:
             "unavailable_tools": sorted(set(unavailable_tools)),
             "security_mode": "allowlist",
             "path_policy_summary": self.path_policy.render_summary_for_context(),
+            "langgraph_agent_server": langgraph_status,
             "notes": ["No sensitive env values stored", f"env_keys={len(safe_env_metadata())}"],
         }
+        if langgraph_status.get("enabled") and langgraph_status.get("available"):
+            snapshot["available_tools"] = sorted(set(snapshot["available_tools"] + ["langgraph_agent_server"]))
+        else:
+            snapshot["unavailable_tools"] = sorted(set(snapshot["unavailable_tools"] + ["langgraph_agent_server"]))
 
         self.db.save_context_snapshot(context_id, snapshot)
         (self.settings.context_dir / "current_context.json").write_text(json.dumps(snapshot, indent=2), encoding="utf-8")
         return snapshot
 
     def render_for_tool(self, snapshot: dict, selected_tool: str, sections: list[str], objective: str) -> dict:
+        path_policy_summary = self.path_policy.render_summary_for_context(
+            task_id=objective[:24].replace(" ", "_"),
+            preferred_root=str(self.settings.langgraph_agent_repo_root.resolve()),
+        )
+        repo_root = str(self.settings.langgraph_agent_repo_root.resolve())
+        recommended_dirs = ["app/agents", "app/graphs", "tests"]
         rendered = {
             "objective": objective,
             "selected_tool": selected_tool,
             "context_id": snapshot["context_id"],
+            "repo_context": {
+                "repo_root": repo_root,
+                "recommended_dirs": recommended_dirs,
+                "writable_roots": [p for p in path_policy_summary.get("read_write_roots", []) if p.startswith(repo_root)],
+                "scratch_root": path_policy_summary.get("scratch_root"),
+            },
+            "path_policy_summary": path_policy_summary,
+            "delegation_options": {
+                "langgraph_agent_server_available": bool(snapshot.get("langgraph_agent_server", {}).get("available", False))
+            },
+            "allowed_commands_hint": [
+                "python3 -m pytest -q",
+                "rg",
+                "find",
+                "ls",
+                "cat",
+                "git status",
+                "git diff",
+            ],
             "sections": {},
         }
         for section in sections:
@@ -123,7 +156,7 @@ class ContextService:
             elif section == "security":
                 rendered["sections"][section] = {
                     "security_mode": snapshot.get("security_mode", "allowlist"),
-                    "path_policy_summary": self.path_policy.render_summary_for_context(task_id=objective[:24].replace(" ", "_")),
+                    "path_policy_summary": path_policy_summary,
                 }
             elif section == "git_status":
                 rendered["sections"][section] = [{"path": r.get("path"), "branch": r.get("branch"), "dirty": r.get("dirty")} for r in snapshot.get("detected_repos", [])]
@@ -144,6 +177,7 @@ class ContextService:
             "available_tools": snapshot.get("available_tools", []),
             "unavailable_tools": snapshot.get("unavailable_tools", []),
             "detected_binaries": snapshot.get("detected_binaries", {}),
+            "langgraph_agent_server": snapshot.get("langgraph_agent_server", {}),
         }
 
     def _detect_version(self, cmd: str) -> str | None:
@@ -208,6 +242,35 @@ class ContextService:
             "active_account": active_account or None,
             "active_project": active_project or None,
         }
+
+    def _detect_langgraph_status(self) -> dict:
+        if not self.settings.enable_langgraph_agent_server:
+            return {
+                "enabled": False,
+                "available": False,
+                "base_url": self.settings.langgraph_agent_server_base_url,
+                "mcp_url": self.settings.langgraph_agent_server_mcp_url,
+                "error": "disabled_by_env",
+            }
+        try:
+            with httpx.Client(timeout=0.8) as client:
+                resp = client.get(f"{self.settings.langgraph_agent_server_base_url.rstrip('/')}/health")
+                resp.raise_for_status()
+                return {
+                    "enabled": True,
+                    "available": True,
+                    "base_url": self.settings.langgraph_agent_server_base_url,
+                    "mcp_url": self.settings.langgraph_agent_server_mcp_url,
+                    "data": resp.json(),
+                }
+        except Exception as exc:
+            return {
+                "enabled": True,
+                "available": False,
+                "base_url": self.settings.langgraph_agent_server_base_url,
+                "mcp_url": self.settings.langgraph_agent_server_mcp_url,
+                "error": str(exc),
+            }
 
     def _gcloud_value(self, cmd: list[str]) -> str:
         try:

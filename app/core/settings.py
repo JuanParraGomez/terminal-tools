@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     context_ttl_seconds: int = Field(default=900)
     trash_dir: Path = Field(default=Path("/home/juan/Documents/terminal-tools/data/trash"))
     trash_ttl_days: int = Field(default=7)
+    langgraph_agent_repo_root: Path = Field(default=Path("/home/juan/Documents/langgraph-agent-server"))
+    langgraph_agent_repo_tests_dir: Path = Field(default=Path("/home/juan/Documents/langgraph-agent-server/tests"))
+    langgraph_agent_repo_trash_dir: Path = Field(default=Path("/home/juan/Documents/langgraph-agent-server/data/trash"))
 
     default_timeout_seconds: int = Field(default=120)
     max_output_chars: int = Field(default=50000)
@@ -42,6 +45,10 @@ class Settings(BaseSettings):
     enable_codex: bool = Field(default=True)
     enable_copilot: bool = Field(default=True)
     enable_claude: bool = Field(default=True)
+    enable_langgraph_agent_server: bool = Field(default=True)
+
+    langgraph_agent_server_base_url: str = Field(default="http://127.0.0.1:8095")
+    langgraph_agent_server_mcp_url: str = Field(default="http://127.0.0.1:8095/mcp")
 
     auto_refresh_context_on_stale: bool = Field(default=True)
 
@@ -67,5 +74,6 @@ def get_settings() -> Settings:
     settings.logs_dir.mkdir(parents=True, exist_ok=True)
     settings.context_dir.mkdir(parents=True, exist_ok=True)
     settings.trash_dir.mkdir(parents=True, exist_ok=True)
+    settings.langgraph_agent_repo_trash_dir.mkdir(parents=True, exist_ok=True)
     settings.db_path.parent.mkdir(parents=True, exist_ok=True)
     return settings

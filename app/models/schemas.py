@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 TaskStatus = Literal["pending", "running", "succeeded", "failed", "cancelled"]
 ExecutionMode = Literal["sync", "async"]
 AllowedMutationLevel = Literal["readonly", "safe_write", "mutative"]
-ToolName = Literal["terminal", "copilot", "claude", "codex", "gcloud", "gemini_cli"]
+ToolName = Literal["terminal", "copilot", "claude", "codex", "gcloud", "gemini_cli", "langgraph_agent_server"]
 
 
 class HealthResponse(BaseModel):
@@ -144,6 +144,7 @@ class ContextSnapshot(BaseModel):
     google_context: dict[str, Any]
     available_tools: list[str]
     unavailable_tools: list[str]
+    langgraph_agent_server: dict[str, Any] = Field(default_factory=dict)
     security_mode: str
     path_policy_summary: dict[str, Any] = Field(default_factory=dict)
     notes: list[str] = Field(default_factory=list)
@@ -223,11 +224,13 @@ class TrashInfoResponse(BaseModel):
     ttl_days: int
     total_items: int
     items: list[dict[str, Any]]
+    scope: str = "default"
 
 
 class TrashCreateRequest(BaseModel):
     task_id: str
     label: str | None = None
+    scope: str | None = None
 
 
 class TrashCreateResponse(BaseModel):
@@ -235,11 +238,13 @@ class TrashCreateResponse(BaseModel):
     trash_path: str
     meta_path: str
     created: bool
+    scope: str = "default"
 
 
 class TrashCleanupRequest(BaseModel):
     dry_run: bool = False
     ttl_days: int | None = None
+    scope: str | None = None
 
 
 class TrashCleanupResponse(BaseModel):
@@ -247,3 +252,64 @@ class TrashCleanupResponse(BaseModel):
     ttl_days: int
     deleted_items: list[str]
     kept_items: list[str]
+    scope: str = "default"
+
+
+class RepoStructureRequest(BaseModel):
+    max_depth: int = Field(default=3, ge=1, le=8)
+    include_hidden: bool = False
+
+
+class RepoStructureResponse(BaseModel):
+    repo_root: str
+    max_depth: int
+    items: list[dict[str, Any]]
+
+
+class RepoRunTestsRequest(BaseModel):
+    pytest_args: list[str] = Field(default_factory=lambda: ["-q"])
+    timeout_seconds: int | None = Field(default=300, ge=1, le=1800)
+
+
+class RepoRunTestsResponse(BaseModel):
+    ok: bool
+    command: list[str]
+    cwd: str
+    returncode: int
+    stdout: str
+    stderr: str
+
+
+class RepoEditFileRequest(BaseModel):
+    relative_path: str = Field(min_length=1)
+    content: str
+    mode: Literal["create", "overwrite", "append"] = "overwrite"
+    create_dirs: bool = True
+
+
+class RepoEditFileResponse(BaseModel):
+    ok: bool
+    path: str
+    mode: str
+    bytes_written: int
+
+
+class DelegateComplexTaskRequest(BaseModel):
+    user_goal: str = Field(min_length=1)
+    context: dict[str, Any] = Field(default_factory=dict)
+    max_iterations: int = Field(default=3, ge=1, le=10)
+
+
+class DelegateComplexTaskResponse(BaseModel):
+    ok: bool
+    delegated: bool
+    provider: str
+    data: dict[str, Any] = Field(default_factory=dict)
+
+
+class LanggraphCapabilitiesResponse(BaseModel):
+    enabled: bool
+    available: bool
+    base_url: str
+    mcp_url: str
+    details: dict[str, Any] = Field(default_factory=dict)

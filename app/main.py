@@ -15,3 +15,4 @@ app.include_router(router)
 def startup() -> None:
     get_context_service().get_context(refresh=False)
     get_trash_service().cleanup(dry_run=False)
+    get_trash_service().cleanup(dry_run=False, scope="langgraph_agent_server")

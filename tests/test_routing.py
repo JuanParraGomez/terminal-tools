@@ -16,3 +16,10 @@ def test_plan_prefers_claude() -> None:
     req = RouteTaskRequest(user_goal="haz plan", needs_plan=True)
     decision = service.decide(req, {"terminal", "claude"})
     assert decision.selected_tool == "claude"
+
+
+def test_complex_task_prefers_langgraph_when_available() -> None:
+    service = RoutingService(Path(__file__).resolve().parents[1] / "app")
+    req = RouteTaskRequest(user_goal="investigación profunda multi-paso", complexity=5, requires_iteration=True)
+    decision = service.decide(req, {"terminal", "langgraph_agent_server"})
+    assert decision.selected_tool == "langgraph_agent_server"

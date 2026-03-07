@@ -61,21 +61,30 @@ class PathPolicyService:
         selected = sorted(candidates, key=lambda m: (m.score, self._restrictiveness(m.rule.permission)), reverse=True)[0]
         return self._decide(target, action, selected.rule)
 
-    def render_summary_for_context(self, task_id: str | None = None) -> dict[str, Any]:
+    def render_summary_for_context(self, task_id: str | None = None, preferred_root: str | None = None) -> dict[str, Any]:
         read_write_roots: list[str] = []
-        scratch_root: str | None = None
+        scratch_roots: list[str] = []
         for ws in self.workspaces:
             for rule in ws.get("rules", []):
                 permission = rule.get("permission")
                 if permission == "read_write":
                     read_write_roots.append(rule["path"])
                 if permission == "scratch":
-                    scratch_root = rule["path"]
+                    scratch_roots.append(rule["path"])
+        scratch_root: str | None = None
+        if preferred_root:
+            for candidate in scratch_roots:
+                if candidate.startswith(preferred_root):
+                    scratch_root = candidate
+                    break
+        if scratch_root is None and scratch_roots:
+            scratch_root = scratch_roots[0]
         if task_id and scratch_root:
             scratch_root = str(Path(scratch_root) / task_id)
         return {
             "read_write_roots": sorted(set(read_write_roots)),
             "scratch_root": scratch_root,
+            "scratch_roots": sorted(set(scratch_roots)),
             "blocked_patterns": self.blocked_patterns(),
         }
 

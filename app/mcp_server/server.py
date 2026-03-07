@@ -5,7 +5,13 @@ from typing import Any
 from fastmcp import FastMCP
 
 from app.models.schemas import GoogleCliTaskRequest, RouteTaskRequest, RunCommandRequest, RunScriptRequest, ToolTaskRequest
-from app.services.container import get_context_service, get_path_policy_service, get_task_service, get_trash_service
+from app.services.container import (
+    get_context_service,
+    get_path_policy_service,
+    get_repo_ops_service,
+    get_task_service,
+    get_trash_service,
+)
 
 mcp = FastMCP("terminal-tools-mcp")
 
@@ -60,18 +66,52 @@ def terminal_check_path_access(path: str, action: str) -> dict[str, Any]:
 
 
 @mcp.tool()
-def terminal_get_trash_info() -> dict[str, Any]:
-    return get_trash_service().list()
+def terminal_get_trash_info(scope: str | None = None) -> dict[str, Any]:
+    return get_trash_service().list(scope=scope)
 
 
 @mcp.tool()
-def terminal_create_trash_space(task_id: str, label: str | None = None) -> dict[str, Any]:
-    return get_trash_service().create_space(task_id=task_id, label=label)
+def terminal_create_trash_space(task_id: str, label: str | None = None, scope: str | None = None) -> dict[str, Any]:
+    return get_trash_service().create_space(task_id=task_id, label=label, scope=scope)
 
 
 @mcp.tool()
-def terminal_cleanup_trash(dry_run: bool = False, ttl_days: int | None = None) -> dict[str, Any]:
-    return get_trash_service().cleanup(dry_run=dry_run, ttl_days=ttl_days)
+def terminal_cleanup_trash(dry_run: bool = False, ttl_days: int | None = None, scope: str | None = None) -> dict[str, Any]:
+    return get_trash_service().cleanup(dry_run=dry_run, ttl_days=ttl_days, scope=scope)
+
+
+@mcp.tool()
+def terminal_list_repo_structure(max_depth: int = 3, include_hidden: bool = False) -> dict[str, Any]:
+    return get_repo_ops_service().list_repo_structure(max_depth=max_depth, include_hidden=include_hidden)
+
+
+@mcp.tool()
+def terminal_run_repo_tests(pytest_args: list[str] | None = None, timeout_seconds: int | None = 300) -> dict[str, Any]:
+    return get_repo_ops_service().run_repo_tests(pytest_args=pytest_args, timeout_seconds=timeout_seconds)
+
+
+@mcp.tool()
+def terminal_edit_repo_file(relative_path: str, content: str, mode: str = "overwrite", create_dirs: bool = True) -> dict[str, Any]:
+    return get_repo_ops_service().edit_repo_file(
+        relative_path=relative_path,
+        content=content,
+        mode=mode,
+        create_dirs=create_dirs,
+    )
+
+
+@mcp.tool()
+def terminal_delegate_complex_task(user_goal: str, context: dict[str, Any] | None = None, max_iterations: int = 3) -> dict[str, Any]:
+    return get_repo_ops_service().delegate_complex_task(
+        user_goal=user_goal,
+        context=context or {},
+        max_iterations=max_iterations,
+    )
+
+
+@mcp.tool()
+def terminal_get_langgraph_capabilities() -> dict[str, Any]:
+    return get_repo_ops_service().get_langgraph_capabilities()
 
 
 @mcp.tool()

@@ -20,6 +20,12 @@ from app.models.schemas import (
     PathPolicyEffectiveResponse,
     PathPolicySummary,
     ReposResponse,
+    RepoEditFileRequest,
+    RepoEditFileResponse,
+    RepoRunTestsRequest,
+    RepoRunTestsResponse,
+    RepoStructureRequest,
+    RepoStructureResponse,
     RouteDecision,
     RouteTaskRequest,
     RoutedRunRequest,
@@ -31,13 +37,22 @@ from app.models.schemas import (
     TaskListResponse,
     TaskResponse,
     ToolTaskRequest,
+    DelegateComplexTaskRequest,
+    DelegateComplexTaskResponse,
+    LanggraphCapabilitiesResponse,
     TrashCleanupRequest,
     TrashCleanupResponse,
     TrashCreateRequest,
     TrashCreateResponse,
     TrashInfoResponse,
 )
-from app.services.container import get_context_service, get_path_policy_service, get_task_service, get_trash_service
+from app.services.container import (
+    get_context_service,
+    get_path_policy_service,
+    get_repo_ops_service,
+    get_task_service,
+    get_trash_service,
+)
 
 router = APIRouter()
 
@@ -55,7 +70,13 @@ def capabilities() -> CapabilitiesResponse:
     for name, path in snapshot.get("detected_binaries", {}).items():
         items.append(CapabilityItem(name=name, available=True, version=snapshot.get("detected_versions", {}).get(name), reason=path))
     for name in snapshot.get("unavailable_tools", []):
-        items.append(CapabilityItem(name=name, available=False, reason="binary not found"))
+        if name == "langgraph_agent_server":
+            details = snapshot.get("langgraph_agent_server", {})
+            items.append(CapabilityItem(name=name, available=False, reason=details.get("error", "service unavailable")))
+        else:
+            items.append(CapabilityItem(name=name, available=False, reason="binary not found"))
+    if snapshot.get("langgraph_agent_server", {}).get("available"):
+        items.append(CapabilityItem(name="langgraph_agent_server", available=True, reason=snapshot.get("langgraph_agent_server", {}).get("base_url")))
     return CapabilitiesResponse(tools=sorted(items, key=lambda i: i.name))
 
 
@@ -138,23 +159,73 @@ def check_path_policy(payload: PathAccessCheckRequest) -> PathAccessCheckRespons
 
 
 @router.get("/trash", response_model=TrashInfoResponse)
-def get_trash_info() -> TrashInfoResponse:
-    return TrashInfoResponse(**get_trash_service().list())
+def get_trash_info(scope: str | None = None) -> TrashInfoResponse:
+    return TrashInfoResponse(**get_trash_service().list(scope=scope))
 
 
 @router.post("/trash/create", response_model=TrashCreateResponse)
 def create_trash_space(payload: TrashCreateRequest) -> TrashCreateResponse:
-    return TrashCreateResponse(**get_trash_service().create_space(task_id=payload.task_id, label=payload.label))
+    return TrashCreateResponse(**get_trash_service().create_space(task_id=payload.task_id, label=payload.label, scope=payload.scope))
 
 
 @router.post("/trash/cleanup", response_model=TrashCleanupResponse)
 def cleanup_trash(payload: TrashCleanupRequest) -> TrashCleanupResponse:
-    return TrashCleanupResponse(**get_trash_service().cleanup(dry_run=payload.dry_run, ttl_days=payload.ttl_days))
+    return TrashCleanupResponse(**get_trash_service().cleanup(dry_run=payload.dry_run, ttl_days=payload.ttl_days, scope=payload.scope))
 
 
 @router.get("/trash/{task_id}")
-def get_trash_for_task(task_id: str) -> dict:
-    return get_trash_service().get_task_trash(task_id)
+def get_trash_for_task(task_id: str, scope: str | None = None) -> dict:
+    return get_trash_service().get_task_trash(task_id, scope=scope)
+
+
+@router.post("/repo/langgraph/structure", response_model=RepoStructureResponse)
+def list_langgraph_repo_structure(payload: RepoStructureRequest) -> RepoStructureResponse:
+    try:
+        data = get_repo_ops_service().list_repo_structure(max_depth=payload.max_depth, include_hidden=payload.include_hidden)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return RepoStructureResponse(**data)
+
+
+@router.post("/repo/langgraph/tests", response_model=RepoRunTestsResponse)
+def run_langgraph_repo_tests(payload: RepoRunTestsRequest) -> RepoRunTestsResponse:
+    try:
+        data = get_repo_ops_service().run_repo_tests(pytest_args=payload.pytest_args, timeout_seconds=payload.timeout_seconds)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return RepoRunTestsResponse(**data)
+
+
+@router.post("/repo/langgraph/edit", response_model=RepoEditFileResponse)
+def edit_langgraph_repo_file(payload: RepoEditFileRequest) -> RepoEditFileResponse:
+    try:
+        data = get_repo_ops_service().edit_repo_file(
+            relative_path=payload.relative_path,
+            content=payload.content,
+            mode=payload.mode,
+            create_dirs=payload.create_dirs,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return RepoEditFileResponse(**data)
+
+
+@router.get("/langgraph/capabilities", response_model=LanggraphCapabilitiesResponse)
+def get_langgraph_capabilities() -> LanggraphCapabilitiesResponse:
+    return LanggraphCapabilitiesResponse(**get_repo_ops_service().get_langgraph_capabilities())
+
+
+@router.post("/delegate/complex", response_model=DelegateComplexTaskResponse)
+def delegate_complex_task(payload: DelegateComplexTaskRequest) -> DelegateComplexTaskResponse:
+    try:
+        data = get_repo_ops_service().delegate_complex_task(
+            user_goal=payload.user_goal,
+            context=payload.context,
+            max_iterations=payload.max_iterations,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return DelegateComplexTaskResponse(**data)
 
 
 @router.post("/route", response_model=RouteDecision)

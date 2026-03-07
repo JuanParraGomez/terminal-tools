@@ -22,6 +22,7 @@ Diseñado para integrarse con OpenClaw sin meter lógica pesada en OpenClaw core
 - `codex` (iteración larga)
 - `gcloud`
 - `gemini_cli` (opcional)
+- `langgraph_agent_server` (delegación opcional para tareas complejas)
 
 Si una herramienta no existe en host, aparece como `unavailable` y devuelve error claro.
 
@@ -111,6 +112,11 @@ Si hay duda, se prioriza la más restrictiva.
 - `POST /trash/create`
 - `POST /trash/cleanup`
 - `GET /trash/{task_id}`
+- `POST /repo/langgraph/structure`
+- `POST /repo/langgraph/tests`
+- `POST /repo/langgraph/edit`
+- `GET /langgraph/capabilities`
+- `POST /delegate/complex`
 - `POST /route`
 - `POST /run`
 - `POST /run/command`
@@ -139,6 +145,11 @@ Si hay duda, se prioriza la más restrictiva.
 - `terminal_get_trash_info`
 - `terminal_create_trash_space`
 - `terminal_cleanup_trash`
+- `terminal_list_repo_structure`
+- `terminal_run_repo_tests`
+- `terminal_edit_repo_file`
+- `terminal_delegate_complex_task`
+- `terminal_get_langgraph_capabilities`
 - `terminal_run_command`
 - `terminal_run_script`
 - `terminal_copilot_code_task`
@@ -226,10 +237,22 @@ curl -i -sS -X POST http://127.0.0.1:8091/mcp/ \
 
 ## Trash temporal
 - Raíz por defecto: `/home/juan/Documents/terminal-tools/data/trash`
+- Para trabajo sobre `langgraph-agent-server`: `/home/juan/Documents/langgraph-agent-server/data/trash` (scope=`langgraph_agent_server`)
 - Espacios por tarea: `task_<task_id>`
 - TTL por defecto: `7` días
 - Cleanup automático en startup y manual por API/MCP
 - No se borra fuera de `trash_root`
+
+## Integración `langgraph-agent-server`
+- Repo autorizado para trabajo incremental: `/home/juan/Documents/langgraph-agent-server`
+- Tests autorizados: `/home/juan/Documents/langgraph-agent-server/tests`
+- Bloqueos explícitos en ese repo: `.git`, `.env`, `.venv`
+- Variables:
+  - `LANGGRAPH_AGENT_SERVER_BASE_URL`
+  - `LANGGRAPH_AGENT_SERVER_MCP_URL`
+  - `ENABLE_LANGGRAPH_AGENT_SERVER`
+- Delegación recomendada cuando la tarea es multi-paso, investigación profunda o requiere síntesis/orquestación.
+- `terminal-tools` sigue siendo capa operativa (terminal/CLI/código/tests), no orquestador multiagente principal.
 
 ## Contexto de tarea y path policy
 El contexto renderizado inyecta:

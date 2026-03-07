@@ -17,6 +17,9 @@ profiles:
   gemini_cli:
     execution_mode: sync
     context_sections: [google_context, recipes, commands]
+  langgraph_agent_server:
+    execution_mode: sync
+    context_sections: [repos, scripts, constraints, security, workdirs]
 
 routing_rules:
   google_target_tools: [gcloud, gemini_cli]

@@ -36,6 +36,32 @@ workspaces:
         allow_create_dirs: true
         allow_delete: false
 
+  - name: langgraph_agent_repo
+    root: /home/juan/Documents/langgraph-agent-server
+    rules:
+      - path: /home/juan/Documents/langgraph-agent-server
+        permission: read_write
+        allow_execute: true
+        allow_create_files: true
+        allow_create_dirs: true
+        allow_delete: false
+        notes: main repo root for incremental development
+      - path: /home/juan/Documents/langgraph-agent-server/tests
+        permission: read_write
+        allow_execute: true
+        allow_create_files: true
+        allow_create_dirs: true
+        allow_delete: false
+        notes: tests workspace
+      - path: /home/juan/Documents/langgraph-agent-server/data/trash
+        permission: scratch
+        allow_execute: true
+        allow_create_files: true
+        allow_create_dirs: true
+        allow_delete: true
+        ttl_days: 7
+        notes: temporary artifacts for langgraph-agent-server tasks
+
   - name: terminal_tools_runtime
     root: /home/juan/Documents/terminal-tools/data
     rules:
@@ -68,6 +94,24 @@ protected:
     permission: blocked
     is_pattern: true
   - path: /home/juan/Documents/**/.git/**
+    permission: blocked
+    is_pattern: true
+  - path: /home/juan/Documents/langgraph-agent-server/.git
+    permission: blocked
+  - path: /home/juan/Documents/langgraph-agent-server/.git/**
+    permission: blocked
+    is_pattern: true
+  - path: /home/juan/Documents/langgraph-agent-server/.env
+    permission: blocked
+  - path: /home/juan/Documents/langgraph-agent-server/**/.env
+    permission: blocked
+    is_pattern: true
+  - path: /home/juan/Documents/langgraph-agent-server/.venv
+    permission: blocked
+  - path: /home/juan/Documents/langgraph-agent-server/.venv/**
+    permission: blocked
+    is_pattern: true
+  - path: /home/juan/Documents/langgraph-agent-server/**/secrets/**
     permission: blocked
     is_pattern: true
   - path: /home/juan/Documents/**/node_modules/**

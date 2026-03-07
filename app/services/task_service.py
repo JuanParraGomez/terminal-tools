@@ -216,7 +216,8 @@ class TaskService:
             "used_context_sections": decision.requires_context_sections,
         }
         self.db.upsert_task(row)
-        self.trash_service.create_space(task_id=task_id, label="task-artifacts")
+        trash_scope = "langgraph_agent_server" if self._prefer_langgraph_repo(cwd, objective, decision.selected_tool) else None
+        self.trash_service.create_space(task_id=task_id, label="task-artifacts", scope=trash_scope)
 
         if execution_mode == "async":
             thread = threading.Thread(
@@ -273,8 +274,24 @@ class TaskService:
                 sections=decision.requires_context_sections,
                 objective=objective,
             )
-            rendered["path_policy_summary"] = self.path_policy.render_summary_for_context(task_id=row["task_id"])
-            rendered["scratch_root"] = str(self.settings.trash_dir / f"task_{row['task_id']}")
+            preferred_root = str(self.settings.langgraph_agent_repo_root.resolve()) if self._prefer_langgraph_repo(cwd, objective, decision.selected_tool) else None
+            rendered["path_policy_summary"] = self.path_policy.render_summary_for_context(task_id=row["task_id"], preferred_root=preferred_root)
+            if preferred_root:
+                rendered["scratch_root"] = str(self.settings.langgraph_agent_repo_trash_dir / f"task_{row['task_id']}")
+            else:
+                rendered["scratch_root"] = str(self.settings.trash_dir / f"task_{row['task_id']}")
+            rendered["repo_context"] = {
+                "repo_root": str(self.settings.langgraph_agent_repo_root.resolve()),
+                "recommended_dirs": ["app/agents", "app/graphs", "tests"],
+                "writable_roots": [
+                    str(self.settings.langgraph_agent_repo_root.resolve()),
+                    str(self.settings.langgraph_agent_repo_tests_dir.resolve()),
+                ],
+                "scratch_root": rendered["scratch_root"],
+            }
+            rendered["delegation_options"] = {
+                "langgraph_agent_server_available": bool(snapshot.get("langgraph_agent_server", {}).get("available", False))
+            }
             req = AdapterRequest(
                 objective=objective,
                 command=command,
@@ -314,6 +331,20 @@ class TaskService:
             self.db.upsert_task(row)
 
         return row
+
+    def _prefer_langgraph_repo(self, cwd: str | None, objective: str, selected_tool: str) -> bool:
+        if selected_tool == "langgraph_agent_server":
+            return True
+        if "langgraph-agent-server" in objective.lower():
+            return True
+        if cwd:
+            cwd_path = Path(cwd).expanduser().resolve()
+            try:
+                cwd_path.relative_to(self.settings.langgraph_agent_repo_root.resolve())
+                return True
+            except ValueError:
+                return False
+        return False
 
     def _context_freshness(self, created_at: str) -> str:
         age = (datetime.now(timezone.utc) - datetime.fromisoformat(created_at)).total_seconds()
