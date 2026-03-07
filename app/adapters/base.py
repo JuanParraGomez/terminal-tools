@@ -11,6 +11,8 @@ class AdapterRequest:
     cwd: str | None
     timeout_seconds: int | None
     rendered_context: dict[str, Any]
+    selected_profile: str | None = None
+    provider_model_alias: str | None = None
     recipe: dict[str, Any] | None = None
 
 

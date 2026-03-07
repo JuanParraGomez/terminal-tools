@@ -109,6 +109,7 @@ class TaskService:
             timeout=request.timeout_seconds,
             allow_mutative=False,
             execution_mode=request.execution_mode,
+            provider_model_alias=request.provider_model_alias,
         )
 
     def run_google_cli(self, request: GoogleCliTaskRequest) -> TaskResponse:
@@ -145,6 +146,7 @@ class TaskService:
             timeout=None,
             allow_mutative=request.allowed_mutation_level != "readonly",
             execution_mode=execution_mode,
+            provider_model_alias=None,
         )
 
     def get_task(self, task_id: str) -> TaskResponse:
@@ -192,6 +194,7 @@ class TaskService:
         timeout: int | None,
         allow_mutative: bool,
         execution_mode: str,
+        provider_model_alias: str | None = None,
     ) -> TaskResponse:
         snapshot = self.context_service.get_context(refresh=False)
         task_id = f"task_{uuid4().hex[:12]}"
@@ -298,6 +301,8 @@ class TaskService:
                 cwd=cwd,
                 timeout_seconds=timeout,
                 rendered_context=rendered,
+                selected_profile=decision.selected_profile,
+                provider_model_alias=provider_model_alias,
             )
             adapter = self.adapters.get(decision.selected_tool)
             output = adapter.execute(req)

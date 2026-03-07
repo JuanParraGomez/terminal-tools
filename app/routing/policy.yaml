@@ -5,6 +5,7 @@ profiles:
   copilot:
     execution_mode: sync
     context_sections: [repos, files, commands]
+    profiles: [copilot_cheap_a, copilot_cheap_b, copilot_plan]
   claude:
     execution_mode: sync
     context_sections: [repos, git_status, constraints]

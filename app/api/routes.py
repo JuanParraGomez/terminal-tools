@@ -86,7 +86,13 @@ def profiles() -> dict:
     return {
         "copilot_cheap_a": s.copilot_model_cheap_a,
         "copilot_cheap_b": s.copilot_model_cheap_b,
+        "copilot_plan": s.copilot_model_plan,
         "claude_review": s.claude_model_review,
+        "copilot_cli_models": {
+            "cheap_a": s.copilot_cli_model_cheap_a,
+            "cheap_b": s.copilot_cli_model_cheap_b,
+            "plan": s.copilot_cli_model_plan,
+        },
         "default_profiles": ["terminal_safe", "google-readonly", "codex_iterative"],
     }
 
@@ -257,6 +263,11 @@ def run_script(payload: RunScriptRequest) -> TaskResponse:
 @router.post("/run/copilot", response_model=TaskResponse)
 def run_copilot(payload: ToolTaskRequest) -> TaskResponse:
     return get_task_service().run_tool_task("copilot", payload, default_profile="copilot_cheap_a")
+
+
+@router.post("/run/copilot-plan", response_model=TaskResponse)
+def run_copilot_plan(payload: ToolTaskRequest) -> TaskResponse:
+    return get_task_service().run_tool_task("copilot", payload, default_profile="copilot_plan")
 
 
 @router.post("/run/claude-review", response_model=TaskResponse)

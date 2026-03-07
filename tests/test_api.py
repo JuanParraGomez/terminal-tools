@@ -29,6 +29,15 @@ def test_route_endpoint() -> None:
     assert "selected_tool" in resp.json()
 
 
+def test_profiles_include_copilot_plan() -> None:
+    client = TestClient(app)
+    resp = client.get("/profiles")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "copilot_plan" in data
+    assert "copilot_cli_models" in data
+
+
 def test_path_policy_endpoints() -> None:
     client = TestClient(app)
     resp = client.get("/path-policy")

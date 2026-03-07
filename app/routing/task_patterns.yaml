@@ -3,6 +3,35 @@ copilot_keywords:
   - cambio puntual
   - explicar bloque
   - fix corto
+  - bug pequeño
+  - cambio pequeño
+  - ajuste corto
+code_keywords:
+  - codigo
+  - código
+  - funcion
+  - función
+  - clase
+  - archivo python
+  - archivo ts
+  - test
+  - pytest
+  - refactor
+  - bug
+  - implementar agente
+  - crear agente
+code_plan_keywords:
+  - plan de codigo
+  - plan de código
+  - planear codigo
+  - planear código
+  - diseña el cambio
+  - diseña la implementacion
+  - diseña la implementación
+  - estrategia de refactor
+  - plan de refactor
+  - plan de implementacion
+  - plan de implementación
 claude_keywords:
   - plan
   - riesgos

@@ -15,9 +15,19 @@ class RoutingService:
 
     def decide(self, request: RouteTaskRequest, available_tools: set[str]) -> RouteDecision:
         goal = request.user_goal.lower()
+        is_code_goal = request.requires_code_changes or self._contains(goal, "code_keywords") or self._contains(goal, "copilot_keywords")
+        is_code_plan = is_code_goal and (request.needs_plan or self._contains(goal, "code_plan_keywords"))
 
         if request.target_environment.lower() == "google":
             return self._select_google(goal, available_tools)
+
+        if is_code_plan and "copilot" in available_tools:
+            return self._mk(
+                "copilot",
+                "copilot_plan",
+                "Code planning task routed to Copilot plan profile",
+                ["repos", "git_status", "constraints", "commands"],
+            )
 
         is_complex = (
             request.complexity >= 4
@@ -25,7 +35,7 @@ class RoutingService:
             or self._contains(goal, "langgraph_keywords")
             or any(k in goal for k in ["investig", "multi", "orquest", "subagente", "sintetiza"])
         )
-        if is_complex and "langgraph_agent_server" in available_tools:
+        if is_complex and not is_code_goal and "langgraph_agent_server" in available_tools:
             return self._mk(
                 "langgraph_agent_server",
                 "langgraph_complex",
@@ -33,17 +43,17 @@ class RoutingService:
                 ["repos", "scripts", "constraints", "security", "workdirs"],
             )
 
-        if request.needs_plan or request.needs_second_opinion or self._contains(goal, "claude_keywords"):
-            if "claude" in available_tools:
-                return self._mk("claude", "claude_review", "Needs planning/review", ["repos", "git_status", "constraints"])
-
         if request.requires_iteration or (request.requires_code_changes and request.complexity >= 4) or self._contains(goal, "codex_keywords"):
             if "codex" in available_tools:
                 return self._mk("codex", "codex_iterative", "Complex iterative code task", ["repos", "git_status", "workdirs", "commands"])
 
-        if (request.requires_code_changes and request.complexity <= 3) or self._contains(goal, "copilot_keywords"):
-            if "copilot" in available_tools:
-                return self._mk("copilot", "copilot_cheap_a", "Focused coding task", ["repos", "files", "commands"])
+        if is_code_goal and "copilot" in available_tools:
+            profile = "copilot_cheap_b" if request.complexity >= 3 else "copilot_cheap_a"
+            return self._mk("copilot", profile, "Focused code task routed to Copilot", ["repos", "files", "commands"])
+
+        if request.needs_plan or request.needs_second_opinion or self._contains(goal, "claude_keywords"):
+            if "claude" in available_tools:
+                return self._mk("claude", "claude_review", "Needs planning/review", ["repos", "git_status", "constraints"])
 
         if self._contains(goal, "google_keywords"):
             return self._select_google(goal, available_tools)

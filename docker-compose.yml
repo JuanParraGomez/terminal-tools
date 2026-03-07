@@ -4,19 +4,27 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    environment:
+      GCLOUD_BIN: /opt/google-cloud-host/google-cloud-sdk/bin/gcloud
     ports:
       - "8090:8090"
     command: ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8090"]
     volumes:
       - ./data:/app/data
+      - /home/juan/.local/google-cloud:/opt/google-cloud-host:ro
+      - /home/juan/.config/gcloud:/root/.config/gcloud:ro
 
   mcp:
     build: .
     restart: unless-stopped
     env_file:
       - .env
+    environment:
+      GCLOUD_BIN: /opt/google-cloud-host/google-cloud-sdk/bin/gcloud
     ports:
       - "8091:8091"
     command: ["python", "-m", "app.mcp_server.server"]
     volumes:
       - ./data:/app/data
+      - /home/juan/.local/google-cloud:/opt/google-cloud-host:ro
+      - /home/juan/.config/gcloud:/root/.config/gcloud:ro

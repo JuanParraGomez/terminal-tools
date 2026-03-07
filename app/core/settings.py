@@ -38,6 +38,10 @@ class Settings(BaseSettings):
 
     copilot_model_cheap_a: str = Field(default="x0")
     copilot_model_cheap_b: str = Field(default="x0.33")
+    copilot_model_plan: str = Field(default="x1")
+    copilot_cli_model_cheap_a: str | None = Field(default=None)
+    copilot_cli_model_cheap_b: str | None = Field(default=None)
+    copilot_cli_model_plan: str = Field(default="claude-sonnet-4.6")
     claude_model_review: str = Field(default="x1")
 
     enable_gemini_cli: bool = Field(default=True)
@@ -47,8 +51,8 @@ class Settings(BaseSettings):
     enable_claude: bool = Field(default=True)
     enable_langgraph_agent_server: bool = Field(default=True)
 
-    langgraph_agent_server_base_url: str = Field(default="http://127.0.0.1:8095")
-    langgraph_agent_server_mcp_url: str = Field(default="http://127.0.0.1:8095/mcp")
+    langgraph_agent_server_base_url: str = Field(default="http://127.0.0.1:8070")
+    langgraph_agent_server_mcp_url: str = Field(default="http://127.0.0.1:8070/mcp/tools")
 
     auto_refresh_context_on_stale: bool = Field(default=True)
 
@@ -70,6 +74,14 @@ class Settings(BaseSettings):
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
     settings = Settings()
+    settings.data_dir = settings.data_dir.expanduser().resolve()
+    settings.logs_dir = settings.logs_dir.expanduser().resolve()
+    settings.db_path = settings.db_path.expanduser().resolve()
+    settings.context_dir = settings.context_dir.expanduser().resolve()
+    settings.trash_dir = settings.trash_dir.expanduser().resolve()
+    settings.langgraph_agent_repo_root = settings.langgraph_agent_repo_root.expanduser().resolve()
+    settings.langgraph_agent_repo_tests_dir = settings.langgraph_agent_repo_tests_dir.expanduser().resolve()
+    settings.langgraph_agent_repo_trash_dir = settings.langgraph_agent_repo_trash_dir.expanduser().resolve()
     settings.data_dir.mkdir(parents=True, exist_ok=True)
     settings.logs_dir.mkdir(parents=True, exist_ok=True)
     settings.context_dir.mkdir(parents=True, exist_ok=True)

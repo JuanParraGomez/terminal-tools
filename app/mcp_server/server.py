@@ -189,6 +189,22 @@ def terminal_copilot_code_task(user_goal: str, execution_mode: str = "sync", cwd
 
 
 @mcp.tool()
+def terminal_copilot_plan_task(
+    user_goal: str,
+    execution_mode: str = "sync",
+    cwd: str | None = None,
+    provider_model_alias: str | None = None,
+) -> dict[str, Any]:
+    req = ToolTaskRequest(
+        user_goal=user_goal,
+        execution_mode=execution_mode,
+        cwd=cwd,
+        provider_model_alias=provider_model_alias,
+    )
+    return get_task_service().run_tool_task("copilot", req, default_profile="copilot_plan").model_dump(mode="json")
+
+
+@mcp.tool()
 def terminal_claude_review_task(user_goal: str, execution_mode: str = "sync", cwd: str | None = None) -> dict[str, Any]:
     req = ToolTaskRequest(user_goal=user_goal, execution_mode=execution_mode, cwd=cwd)
     return get_task_service().run_tool_task("claude", req, default_profile="claude_review").model_dump(mode="json")
