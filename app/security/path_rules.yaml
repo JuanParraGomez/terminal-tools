@@ -1,0 +1,11 @@
+mode: allowlist
+safe_read:
+  - /home/juan/Documents
+  - /tmp
+safe_write:
+  - /home/juan/Documents/scripts
+  - /tmp
+blocked:
+  - /etc
+  - /root
+  - /var/lib

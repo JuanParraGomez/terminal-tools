@@ -1,0 +1,23 @@
+profiles:
+  terminal:
+    execution_mode: sync
+    context_sections: [security, workdirs, scripts]
+  copilot:
+    execution_mode: sync
+    context_sections: [repos, files, commands]
+  claude:
+    execution_mode: sync
+    context_sections: [repos, git_status, constraints]
+  codex:
+    execution_mode: async
+    context_sections: [repos, git_status, workdirs, commands]
+  gcloud:
+    execution_mode: sync
+    context_sections: [google_context, recipes, commands]
+  gemini_cli:
+    execution_mode: sync
+    context_sections: [google_context, recipes, commands]
+
+routing_rules:
+  google_target_tools: [gcloud, gemini_cli]
+  closed_mutation_requires_confirmation: true

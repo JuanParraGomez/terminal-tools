@@ -1,0 +1,15 @@
+name: list_repo_files
+description: List files in working directory
+category: terminal
+command_base: [find]
+args:
+  - .
+  - -maxdepth
+  - "3"
+  - -type
+  - f
+mode: readonly
+timeout: 15
+parser: text
+example_output: "./app/main.py"
+risks: low

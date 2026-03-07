@@ -1,0 +1,22 @@
+allowed_commands:
+  - bash
+  - sh
+  - ls
+  - pwd
+  - cat
+  - tail
+  - head
+  - grep
+  - rg
+  - find
+  - git
+  - python
+  - python3
+  - node
+  - npm
+  - gcloud
+  - gemini
+  - codex
+  - claude
+  - copilot
+  - echo

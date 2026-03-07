@@ -1,0 +1,11 @@
+name: list_projects
+description: List Google Cloud projects
+category: google
+command_base: [gcloud, projects, list]
+args:
+  - --format=json
+mode: readonly
+timeout: 30
+parser: json
+example_output: "[{\"projectId\":\"my-project\"}]"
+risks: low

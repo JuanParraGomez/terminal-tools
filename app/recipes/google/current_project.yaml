@@ -1,0 +1,11 @@
+name: current_project
+description: Show active gcloud project
+category: google
+command_base: [gcloud, config, get-value, project]
+args:
+  - --quiet
+mode: readonly
+timeout: 15
+parser: text
+example_output: "my-project"
+risks: low

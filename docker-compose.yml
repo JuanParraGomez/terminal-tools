@@ -1,0 +1,22 @@
+services:
+  api:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "8090:8090"
+    command: ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8090"]
+    volumes:
+      - ./data:/app/data
+
+  mcp:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "8091:8091"
+    command: ["python", "-m", "app.mcp_server.server"]
+    volumes:
+      - ./data:/app/data

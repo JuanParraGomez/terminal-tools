@@ -1,0 +1,13 @@
+name: read_log_tail
+description: Tail a log file
+category: terminal
+command_base: [tail]
+args:
+  - -n
+  - "{lines}"
+  - "{log_path}"
+mode: readonly
+timeout: 10
+parser: text
+example_output: "INFO task completed"
+risks: low

@@ -1,0 +1,25 @@
+copilot_keywords:
+  - refactor pequeño
+  - cambio puntual
+  - explicar bloque
+  - fix corto
+claude_keywords:
+  - plan
+  - riesgos
+  - segunda opinion
+  - review
+codex_keywords:
+  - iterar
+  - multiple archivos
+  - estabilizar
+  - ejecutar validaciones
+google_keywords:
+  - gcloud
+  - google cloud
+  - cloud run
+  - proyecto gcp
+terminal_keywords:
+  - script
+  - logs
+  - estado sistema
+  - comando local

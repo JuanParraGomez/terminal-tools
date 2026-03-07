@@ -1,0 +1,14 @@
+name: cloud_run_service
+description: Describe a Cloud Run service
+category: google
+command_base: [gcloud, run, services, describe]
+args:
+  - "{service}"
+  - --region={region}
+  - --platform=managed
+  - --format=json
+mode: readonly
+timeout: 45
+parser: json
+example_output: "{\"status\":{\"url\":\"...\"}}"
+risks: medium

@@ -1,0 +1,18 @@
+deny_commands:
+  - sudo
+  - su
+  - passwd
+  - mount
+  - umount
+  - reboot
+  - shutdown
+  - mkfs
+  - dd
+
+forbidden_patterns:
+  - "rm -rf /"
+  - "curl .*\\|.*sh"
+  - "wget .*\\|.*sh"
+  - "/etc/shadow"
+  - "~/.ssh"
+  - "chmod 777"

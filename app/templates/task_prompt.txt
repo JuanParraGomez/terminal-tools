@@ -1,0 +1,4 @@
+Objective: {objective}
+Constraints: {constraints}
+Context summary: {context_summary}
+Expected output: concise structured result with next action.

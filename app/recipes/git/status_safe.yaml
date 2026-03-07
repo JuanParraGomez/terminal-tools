@@ -1,0 +1,12 @@
+name: git_status_safe
+description: Safe git status overview
+category: git
+command_base: [git, status]
+args:
+  - --short
+  - --branch
+mode: readonly
+timeout: 10
+parser: text
+example_output: "## main...origin/main"
+risks: low

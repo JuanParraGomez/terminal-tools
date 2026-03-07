@@ -1,0 +1,75 @@
+defaults:
+  unknown_paths: blocked
+  follow_symlinks: false
+
+workspaces:
+  - name: documents_scripts
+    root: /home/juan/Documents/scripts
+    rules:
+      - path: /home/juan/Documents/scripts/deploy
+        permission: read_write
+        allow_execute: true
+        allow_create_files: true
+        allow_create_dirs: false
+        allow_delete: false
+        notes: deploy scripts
+      - path: /home/juan/Documents/scripts/backup
+        permission: read_write
+        allow_execute: true
+        allow_create_files: true
+        allow_create_dirs: false
+        allow_delete: false
+      - path: /home/juan/Documents/scripts/maintenance
+        permission: read_write
+        allow_execute: true
+        allow_create_files: true
+        allow_create_dirs: false
+        allow_delete: false
+
+  - name: infra_scripts
+    root: /home/juan/Documents/infra-scripts
+    rules:
+      - path: /home/juan/Documents/infra-scripts
+        permission: read_write
+        allow_execute: true
+        allow_create_files: true
+        allow_create_dirs: true
+        allow_delete: false
+
+  - name: terminal_tools_runtime
+    root: /home/juan/Documents/terminal-tools/data
+    rules:
+      - path: /home/juan/Documents/terminal-tools/data/logs
+        permission: read_write
+        allow_create_files: true
+        allow_create_dirs: true
+        allow_delete: false
+      - path: /home/juan/Documents/terminal-tools/data/context
+        permission: read_write
+        allow_create_files: true
+        allow_create_dirs: true
+        allow_delete: false
+      - path: /home/juan/Documents/terminal-tools/data/trash
+        permission: scratch
+        allow_execute: true
+        allow_create_files: true
+        allow_create_dirs: true
+        allow_delete: true
+        ttl_days: 7
+        notes: temporary orphan code and disposable artifacts
+
+protected:
+  - path: /home/juan/Documents/.env
+    permission: blocked
+  - path: /home/juan/Documents/**/.env
+    permission: blocked
+    is_pattern: true
+  - path: /home/juan/Documents/**/.git
+    permission: blocked
+    is_pattern: true
+  - path: /home/juan/Documents/**/.git/**
+    permission: blocked
+    is_pattern: true
+  - path: /home/juan/Documents/**/node_modules/**
+    permission: blocked
+    is_pattern: true

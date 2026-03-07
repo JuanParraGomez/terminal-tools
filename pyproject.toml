@@ -1,0 +1,31 @@
+[project]
+name = "terminal-tools"
+version = "0.1.0"
+description = "Terminal and agent tool orchestrator with FastAPI + FastMCP"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi==0.115.0",
+  "uvicorn[standard]==0.30.6",
+  "pydantic==2.9.2",
+  "pydantic-settings==2.5.2",
+  "fastmcp==2.5.1",
+  "httpx==0.28.1",
+  "pyyaml==6.0.2"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest==8.3.4"
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]

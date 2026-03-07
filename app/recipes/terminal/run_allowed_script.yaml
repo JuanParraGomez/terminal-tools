@@ -1,0 +1,11 @@
+name: run_allowed_script
+description: Execute an allowed script path with bash
+category: terminal
+command_base: [bash]
+args:
+  - "{script_path}"
+mode: mutative
+timeout: 120
+parser: text
+example_output: "backup completed"
+risks: medium
