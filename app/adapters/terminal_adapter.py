@@ -13,9 +13,18 @@ class TerminalAdapter(BaseAdapter):
         self.executor = executor
 
     def execute(self, req: AdapterRequest) -> AdapterResponse:
-        if not req.command:
+        command = req.command
+        # When no explicit command list is given, treat the objective as a shell command string
+        if not command and req.objective:
+            command = ["bash", "-c", req.objective]
+        if not command:
             return AdapterResponse(ok=False, summary="No command provided", result={"error": "missing command"}, used_context_sections=[])
-        result = self.executor.run(req.command, cwd=Path(req.cwd) if req.cwd else None, timeout_seconds=req.timeout_seconds)
+        result = self.executor.run(
+            command,
+            cwd=Path(req.cwd) if req.cwd else None,
+            timeout_seconds=req.timeout_seconds,
+            env=req.env,
+        )
         return AdapterResponse(
             ok=bool(result.get("ok")),
             summary="Command executed" if result.get("ok") else "Command failed",

@@ -26,6 +26,14 @@ Diseñado para integrarse con OpenClaw sin meter lógica pesada en OpenClaw core
 
 Si una herramienta no existe en host, aparece como `unavailable` y devuelve error claro.
 
+## Política de modelos (Copilot/Claude)
+- Copilot solo usa perfiles baratos:
+  - `copilot_cheap_a` -> `GPT-5 mini` (`gpt-5-mini`)
+  - `copilot_cheap_b` -> `GPT-4.1` (`gpt-4.1`)
+  - `copilot_plan` -> `Claude Haiku 4.5` (`claude-haiku-4.5`)
+- Excepción restringida/review: `Claude Haiku 4.5`.
+- El adapter de Copilot ignora aliases no permitidos y cae al perfil barato correspondiente.
+
 ## Routing Policy
 Reglas principales implementadas:
 - `target_environment=google` -> prioriza `gcloud` o `gemini_cli`.

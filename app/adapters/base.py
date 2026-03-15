@@ -14,6 +14,7 @@ class AdapterRequest:
     selected_profile: str | None = None
     provider_model_alias: str | None = None
     recipe: dict[str, Any] | None = None
+    env: dict[str, str] | None = None
 
 
 @dataclass

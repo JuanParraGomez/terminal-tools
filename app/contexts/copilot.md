@@ -19,6 +19,13 @@ Profiles:
 - `copilot_cheap_b`: slightly richer focused code task
 - `copilot_plan`: code planning profile; plan only, no file edits
 
+Model policy (mandatory):
+- `copilot_cheap_a` -> `GPT-5 mini` (`gpt-5-mini`)
+- `copilot_cheap_b` -> `GPT-4.1` (`gpt-4.1`)
+- `copilot_plan` -> `Claude Haiku 4.5` (`claude-haiku-4.5`)
+- Only review fallback outside Copilot: `Claude Haiku 4.5`.
+- Do not request or route to other models.
+
 Output style:
 - Minimal patch plan + concise rationale
 

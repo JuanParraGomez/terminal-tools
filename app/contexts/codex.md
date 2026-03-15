@@ -15,3 +15,12 @@ Output style:
 
 Risks:
 - Large change sets; keep scope bounded
+
+LangGraph baseline requirement:
+- If creating or modifying LangGraph/LangChain agent services, include LangSmith tracing by default.
+- Minimum expected env/config:
+  - `LANGSMITH_ENABLED=true`
+  - `LANGSMITH_API_KEY` (from environment, never hardcoded in source)
+  - `LANGSMITH_PROJECT` (service-level project name)
+  - `LANGSMITH_ENDPOINT=https://api.smith.langchain.com`
+- Ensure startup/bootstrap wires tracing env so runtime executions are observable.

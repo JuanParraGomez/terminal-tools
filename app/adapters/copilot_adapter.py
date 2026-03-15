@@ -68,10 +68,16 @@ class CopilotAdapter(BaseAdapter):
 
     def _resolve_cli_model(self, req: AdapterRequest) -> str | None:
         requested = (req.provider_model_alias or "").strip()
+        allowed_aliases = {
+            self.settings.copilot_model_cheap_a,
+            self.settings.copilot_model_cheap_b,
+            self.settings.copilot_model_plan,
+        }
         if requested:
-            if requested in {self.settings.copilot_model_cheap_a, self.settings.copilot_model_cheap_b, self.settings.copilot_model_plan}:
+            if requested in allowed_aliases:
                 return self._cli_model_for_alias(requested)
-            return requested
+            # Enforce cheap-model policy: unknown aliases are not forwarded to Copilot CLI.
+            return self._cli_model_for_alias(self._alias_for_profile(req.selected_profile))
         return self._cli_model_for_alias(self._alias_for_profile(req.selected_profile))
 
     def _alias_for_profile(self, profile: str | None) -> str:
