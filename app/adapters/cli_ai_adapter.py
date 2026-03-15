@@ -70,6 +70,9 @@ class CliAIAgentAdapter(BaseAdapter):
 
     def _codex_exec_command(self, req: AdapterRequest) -> list[str]:
         prompt = self._render_text(req)
+        # Use repo_root as cwd so git commands run from the repo root, not a subdir
+        repo_root = req.rendered_context.get("repo_context", {}).get("repo_root")
+        effective_cwd = repo_root or req.cwd
         cmd = [
             self.binary,
             "exec",
@@ -80,8 +83,8 @@ class CliAIAgentAdapter(BaseAdapter):
             "--full-auto",
             "--json",
         ]
-        if req.cwd:
-            cmd.extend(["-C", req.cwd])
+        if effective_cwd:
+            cmd.extend(["-C", effective_cwd])
         for allowed_dir in self._allowed_dirs(req, req.cwd):
             cmd.extend(["--add-dir", allowed_dir])
         if req.provider_model_alias:
