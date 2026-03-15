@@ -31,7 +31,10 @@ class CapabilitiesResponse(BaseModel):
 
 class RouteTaskRequest(BaseModel):
     task_type: str | None = None
-    user_goal: str = Field(..., min_length=1)
+    user_goal: str | None = None
+    # Legacy fields from openclaw uniflex adapter — mapped to user_goal automatically
+    command: str | None = None
+    input: str | None = None
     complexity: int = Field(default=2, ge=1, le=5)
     needs_plan: bool = False
     needs_second_opinion: bool = False
@@ -39,6 +42,12 @@ class RouteTaskRequest(BaseModel):
     requires_iteration: bool = False
     requires_code_changes: bool = False
     allowed_mutation_level: AllowedMutationLevel = "readonly"
+
+    def model_post_init(self, __context: Any) -> None:
+        if not self.user_goal:
+            self.user_goal = self.input or self.command or ""
+        if not self.user_goal:
+            raise ValueError("user_goal (or command/input) is required")
 
 
 class RoutedRunRequest(RouteTaskRequest):
@@ -56,7 +65,7 @@ class RouteDecision(BaseModel):
 class RunBaseRequest(BaseModel):
     user_goal: str = Field(..., min_length=1)
     execution_mode: ExecutionMode = "sync"
-    timeout_seconds: int | None = Field(default=None, ge=1, le=1800)
+    timeout_seconds: int | None = Field(default=None, ge=1, le=10800)
     cwd: str | None = None
 
 
@@ -64,6 +73,7 @@ class RunCommandRequest(RunBaseRequest):
     command: list[str] = Field(..., min_length=1)
     dry_run: bool = False
     allow_mutative: bool = False
+    env: dict[str, str] = Field(default_factory=dict)
 
 
 class RunScriptRequest(RunBaseRequest):

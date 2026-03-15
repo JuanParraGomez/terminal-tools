@@ -108,6 +108,16 @@ class CliAIAgentAdapter(BaseAdapter):
                     "At the end, summarize changed files and remaining risks.",
                 ]
             )
+        if self.name == "claude" and req.selected_profile in {"claude_plan", "claude_code"}:
+            lines.extend(
+                [
+                    "ExecutionMode: apply_changes",
+                    "Apply all required file changes directly using your file editing tools.",
+                    "Modify only files inside the allowed repo roots.",
+                    "Run the smallest useful validation after applying changes.",
+                    "At the end, summarize changed files and remaining risks.",
+                ]
+            )
         return "\n".join(lines)
 
     def _allowed_dirs(self, req: AdapterRequest, cwd: str | None) -> list[str]:

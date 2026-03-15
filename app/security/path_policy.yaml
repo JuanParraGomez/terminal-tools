@@ -62,6 +62,41 @@ workspaces:
         ttl_days: 7
         notes: temporary artifacts for langgraph-agent-server tasks
 
+  - name: coolify_server_repo
+    root: /home/juan/Documents/coolify-server
+    rules:
+      - path: /home/juan/Documents/coolify-server
+        permission: read_write
+        allow_execute: true
+        allow_create_files: true
+        allow_create_dirs: true
+        allow_delete: false
+        notes: monorepo root for UI factory projects
+      - path: /home/juan/Documents/coolify-server/apps
+        permission: read_write
+        allow_execute: true
+        allow_create_files: true
+        allow_create_dirs: true
+        allow_delete: false
+      - path: /home/juan/Documents/coolify-server/sandboxes
+        permission: read_write
+        allow_execute: true
+        allow_create_files: true
+        allow_create_dirs: true
+        allow_delete: false
+      - path: /home/juan/Documents/coolify-server/registry
+        permission: read_write
+        allow_execute: true
+        allow_create_files: true
+        allow_create_dirs: true
+        allow_delete: false
+      - path: /home/juan/Documents/coolify-server/rag
+        permission: read_write
+        allow_execute: true
+        allow_create_files: true
+        allow_create_dirs: true
+        allow_delete: false
+
   - name: terminal_tools_runtime
     root: /home/juan/Documents/terminal-tools/data
     rules:
@@ -83,6 +118,28 @@ workspaces:
         allow_delete: true
         ttl_days: 7
         notes: temporary orphan code and disposable artifacts
+
+  - name: terminal_tools_container_runtime
+    root: /app/data
+    rules:
+      - path: /app/data/logs
+        permission: read_write
+        allow_create_files: true
+        allow_create_dirs: true
+        allow_delete: false
+      - path: /app/data/context
+        permission: read_write
+        allow_create_files: true
+        allow_create_dirs: true
+        allow_delete: false
+      - path: /app/data/trash
+        permission: scratch
+        allow_execute: true
+        allow_create_files: true
+        allow_create_dirs: true
+        allow_delete: true
+        ttl_days: 7
+        notes: container-local scratch runtime
 
 protected:
   - path: /home/juan/Documents/.env

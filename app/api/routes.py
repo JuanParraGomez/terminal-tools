@@ -86,16 +86,11 @@ def capabilities() -> CapabilitiesResponse:
 def profiles() -> dict:
     s = get_settings()
     return {
-        "copilot_cheap_a": s.copilot_model_cheap_a,
-        "copilot_cheap_b": s.copilot_model_cheap_b,
-        "copilot_plan": s.copilot_model_plan,
+        "claude_small": s.claude_model_small,
+        "claude_plan": s.claude_model_plan,
+        "claude_code": s.claude_model_code,
         "claude_review": s.claude_model_review,
-        "copilot_cli_models": {
-            "cheap_a": s.copilot_cli_model_cheap_a,
-            "cheap_b": s.copilot_cli_model_cheap_b,
-            "plan": s.copilot_cli_model_plan,
-        },
-        "default_profiles": ["terminal_safe", "google-readonly", "codex_iterative"],
+        "default_profiles": ["claude_small", "claude_plan", "claude_code"],
     }
 
 
@@ -277,24 +272,35 @@ def run_script(payload: RunScriptRequest) -> TaskResponse:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+@router.post("/run/claude", response_model=TaskResponse)
+def run_claude(payload: ToolTaskRequest) -> TaskResponse:
+    return get_task_service().run_tool_task("claude", payload, default_profile="claude_small")
+
+
+@router.post("/run/claude-plan", response_model=TaskResponse)
+def run_claude_plan(payload: ToolTaskRequest) -> TaskResponse:
+    return get_task_service().run_tool_task("claude", payload, default_profile="claude_plan")
+
+
+@router.post("/run/claude-review", response_model=TaskResponse)
+def run_claude_review(payload: ToolTaskRequest) -> TaskResponse:
+    return get_task_service().run_tool_task("claude", payload, default_profile="claude_review")
+
+
+# Legacy routes — redirect to claude equivalents
 @router.post("/run/copilot", response_model=TaskResponse)
 def run_copilot(payload: ToolTaskRequest) -> TaskResponse:
-    return get_task_service().run_tool_task("copilot", payload, default_profile="copilot_cheap_a")
+    return get_task_service().run_tool_task("claude", payload, default_profile="claude_small")
 
 
 @router.post("/run/copilot-plan", response_model=TaskResponse)
 def run_copilot_plan(payload: ToolTaskRequest) -> TaskResponse:
-    return get_task_service().run_tool_task("copilot", payload, default_profile="copilot_plan")
-
-
-@router.post("/run/claude-review", response_model=TaskResponse)
-def run_claude(payload: ToolTaskRequest) -> TaskResponse:
-    return get_task_service().run_tool_task("claude", payload, default_profile="claude_review")
+    return get_task_service().run_tool_task("claude", payload, default_profile="claude_plan")
 
 
 @router.post("/run/codex", response_model=TaskResponse)
 def run_codex(payload: ToolTaskRequest) -> TaskResponse:
-    return get_task_service().run_tool_task("codex", payload, default_profile="codex_iterative")
+    return get_task_service().run_tool_task("claude", payload, default_profile="claude_code")
 
 
 @router.post("/run/google-cli", response_model=TaskResponse)

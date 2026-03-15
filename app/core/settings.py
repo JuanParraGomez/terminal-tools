@@ -36,18 +36,24 @@ class Settings(BaseSettings):
     gcloud_bin: str = Field(default="gcloud")
     gemini_cli_bin: str = Field(default="gemini")
 
-    copilot_model_cheap_a: str = Field(default="gpt-5-mini")
-    copilot_model_cheap_b: str = Field(default="gpt-4.1")
-    copilot_model_plan: str = Field(default="claude-haiku-4.5")
-    copilot_cli_model_cheap_a: str | None = Field(default="gpt-5-mini")
-    copilot_cli_model_cheap_b: str | None = Field(default="gpt-4.1")
-    copilot_cli_model_plan: str = Field(default="claude-haiku-4.5")
-    claude_model_review: str = Field(default="claude-haiku-4.5")
+    # Claude model profiles (primary tool for all AI tasks)
+    claude_model_small: str = Field(default="claude-haiku-4-5")    # fast/cheap: quick fixes, small tasks
+    claude_model_plan: str = Field(default="claude-sonnet-4-6")    # planning, architecture, complex tasks
+    claude_model_code: str = Field(default="claude-sonnet-4-6")    # code execution, apply changes
+    claude_model_review: str = Field(default="claude-haiku-4-5")   # review/validation (kept for compat)
+
+    # Legacy copilot settings (kept for backward compat, unused)
+    copilot_model_cheap_a: str = Field(default="claude-haiku-4-5")
+    copilot_model_cheap_b: str = Field(default="claude-sonnet-4-6")
+    copilot_model_plan: str = Field(default="claude-sonnet-4-6")
+    copilot_cli_model_cheap_a: str | None = Field(default=None)
+    copilot_cli_model_cheap_b: str | None = Field(default=None)
+    copilot_cli_model_plan: str = Field(default="claude-sonnet-4-6")
 
     enable_gemini_cli: bool = Field(default=True)
     enable_gcloud: bool = Field(default=True)
-    enable_codex: bool = Field(default=True)
-    enable_copilot: bool = Field(default=True)
+    enable_codex: bool = Field(default=False)   # disabled: all code tasks route to claude
+    enable_copilot: bool = Field(default=False)  # disabled: all tasks route to claude
     enable_claude: bool = Field(default=True)
     enable_langgraph_agent_server: bool = Field(default=True)
 

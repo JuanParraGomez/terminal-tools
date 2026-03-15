@@ -33,24 +33,28 @@ class SecurityValidator:
         if not command:
             raise SecurityError("command is empty")
         exe = command[0]
+        inner_command = command
+        if exe == "env":
+            inner_command = self._unwrap_env_command(command)
+            exe = inner_command[0]
         if exe in self._deny_commands:
             raise SecurityError(f"command '{exe}' is blocked")
         if exe not in self._allowed_commands:
             raise SecurityError(f"command '{exe}' is not in allowlist")
 
-        rendered = " ".join(command)
+        rendered = " ".join(inner_command)
         for pattern in self._deny_patterns:
             if pattern.search(rendered):
                 raise SecurityError("command matches a forbidden pattern")
 
-        if not allow_mutative and self._looks_mutative(exe, command):
+        if not allow_mutative and self._looks_mutative(exe, inner_command):
             raise SecurityError("mutative command requires explicit confirmation")
 
         if cwd is not None:
             self.validate_cwd(cwd)
 
         # Validate explicit path-like args against policy.
-        for arg in command[1:]:
+        for arg in inner_command[1:]:
             if arg.startswith("-"):
                 continue
             if "/" not in arg and not arg.startswith("."):
@@ -66,6 +70,16 @@ class SecurityValidator:
             decision = self._path_policy.evaluate(candidate, action)
             if not decision.allowed:
                 raise SecurityError(f"path policy denied {action} on '{candidate}': {decision.reason}")
+
+    def _unwrap_env_command(self, command: list[str]) -> list[str]:
+        if len(command) < 2:
+            raise SecurityError("env wrapper missing inner command")
+        index = 1
+        while index < len(command) and "=" in command[index] and not command[index].startswith("-"):
+            index += 1
+        if index >= len(command):
+            raise SecurityError("env wrapper missing executable")
+        return command[index:]
 
     def validate_script_path(self, script_path: Path, allow_mutative: bool) -> None:
         resolved = script_path.resolve()
@@ -90,9 +104,42 @@ class SecurityValidator:
             raise SecurityError(f"path policy denied cwd usage: {decision.reason}")
 
     def _looks_mutative(self, exe: str, args: list[str]) -> bool:
-        rendered = " ".join(args)
-        mutative_keywords = ["delete", "remove", "apply", "deploy", "create", "update", "set", "rm", "mv", "cp", "chmod"]
-        return exe in {"rm", "mv", "cp", "chmod"} or any(k in rendered for k in mutative_keywords)
+        if exe in {"rm", "mv", "cp", "chmod"}:
+            return True
+
+        # Allow simple read-only inline validation scripts. The previous
+        # substring-based heuristic falsely blocked commands that merely
+        # referenced files like deploy.meta.yaml.
+        if exe in {"python", "python3"} and "-c" in args:
+            rendered = " ".join(args)
+            risky_markers = [
+                "unlink(",
+                "rmtree(",
+                "mkdir(",
+                "write_text(",
+                "write_bytes(",
+                "open(",
+                "subprocess",
+                "os.remove",
+                "os.rmdir",
+                "os.makedirs",
+                "shutil.move",
+                "shutil.copy",
+                "shutil.rmtree",
+            ]
+            return any(marker in rendered for marker in risky_markers)
+
+        mutative_patterns: dict[str, set[str]] = {
+            "git": {"commit", "push", "pull", "merge", "rebase", "checkout", "switch", "tag", "reset", "clean", "apply", "stash"},
+            "docker": {"build", "run", "compose", "rm", "rmi", "stop", "start", "restart"},
+            "kubectl": {"apply", "delete", "patch", "scale", "rollout", "set"},
+            "terraform": {"apply", "destroy", "taint", "import"},
+            "gcloud": {"deploy", "create", "delete", "update", "set"},
+        }
+        if exe in mutative_patterns:
+            return any(arg in mutative_patterns[exe] for arg in args[1:] if not arg.startswith("-"))
+
+        return False
 
     def _contains_mutative_pattern(self, text: str) -> bool:
         lowered = text.lower()

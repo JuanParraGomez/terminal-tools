@@ -70,6 +70,7 @@ class TaskService:
             timeout=request.timeout_seconds,
             allow_mutative=request.allow_mutative,
             execution_mode=request.execution_mode,
+            env=request.env,
         )
 
     def run_script(self, request: RunScriptRequest) -> TaskResponse:
@@ -118,6 +119,10 @@ class TaskService:
             command = self.recipes.render_command(request.recipe, request.recipe_args)
         if not command:
             raise ValueError("command or recipe is required")
+
+        # Ensure command always starts with 'gcloud' so security validator passes
+        if command and command[0] != "gcloud":
+            command = ["gcloud"] + command
 
         decision = RouteDecision(
             selected_tool="gcloud",
@@ -195,7 +200,13 @@ class TaskService:
         allow_mutative: bool,
         execution_mode: str,
         provider_model_alias: str | None = None,
+        env: dict[str, str] | None = None,
     ) -> TaskResponse:
+        provider_model_alias = self._normalize_provider_model_alias(
+            tool=decision.selected_tool,
+            profile=decision.selected_profile,
+            provider_model_alias=provider_model_alias,
+        )
         snapshot = self.context_service.get_context(refresh=False)
         task_id = f"task_{uuid4().hex[:12]}"
         created_at = datetime.now(timezone.utc).isoformat()
@@ -234,6 +245,8 @@ class TaskService:
                     "allow_mutative": allow_mutative,
                     "decision": decision,
                     "snapshot": snapshot,
+                    "provider_model_alias": provider_model_alias,
+                    "env": env,
                 },
                 daemon=True,
             )
@@ -249,6 +262,8 @@ class TaskService:
             allow_mutative=allow_mutative,
             decision=decision,
             snapshot=snapshot,
+            provider_model_alias=provider_model_alias,
+            env=env,
         )
         return self._to_response(done)
 
@@ -262,6 +277,8 @@ class TaskService:
         allow_mutative: bool,
         decision: RouteDecision,
         snapshot: dict,
+        provider_model_alias: str | None,
+        env: dict[str, str] | None,
     ) -> dict:
         row["status"] = "running"
         row["started_at"] = datetime.now(timezone.utc).isoformat()
@@ -277,21 +294,15 @@ class TaskService:
                 sections=decision.requires_context_sections,
                 objective=objective,
             )
-            preferred_root = str(self.settings.langgraph_agent_repo_root.resolve()) if self._prefer_langgraph_repo(cwd, objective, decision.selected_tool) else None
+            repo_context = self._build_repo_context(cwd)
+            preferred_root = repo_context["repo_root"]
             rendered["path_policy_summary"] = self.path_policy.render_summary_for_context(task_id=row["task_id"], preferred_root=preferred_root)
-            if preferred_root:
+            if self._prefer_langgraph_repo(cwd, objective, decision.selected_tool):
                 rendered["scratch_root"] = str(self.settings.langgraph_agent_repo_trash_dir / f"task_{row['task_id']}")
             else:
                 rendered["scratch_root"] = str(self.settings.trash_dir / f"task_{row['task_id']}")
-            rendered["repo_context"] = {
-                "repo_root": str(self.settings.langgraph_agent_repo_root.resolve()),
-                "recommended_dirs": ["app/agents", "app/graphs", "tests"],
-                "writable_roots": [
-                    str(self.settings.langgraph_agent_repo_root.resolve()),
-                    str(self.settings.langgraph_agent_repo_tests_dir.resolve()),
-                ],
-                "scratch_root": rendered["scratch_root"],
-            }
+            repo_context["scratch_root"] = rendered["scratch_root"]
+            rendered["repo_context"] = repo_context
             rendered["delegation_options"] = {
                 "langgraph_agent_server_available": bool(snapshot.get("langgraph_agent_server", {}).get("available", False))
             }
@@ -303,6 +314,7 @@ class TaskService:
                 rendered_context=rendered,
                 selected_profile=decision.selected_profile,
                 provider_model_alias=provider_model_alias,
+                env=env,
             )
             adapter = self.adapters.get(decision.selected_tool)
             output = adapter.execute(req)
@@ -337,6 +349,60 @@ class TaskService:
 
         return row
 
+    def _normalize_provider_model_alias(self, tool: str, profile: str, provider_model_alias: str | None) -> str | None:
+        alias = (provider_model_alias or "").strip()
+        if tool == "copilot":
+            allowed = {
+                self.settings.copilot_model_cheap_a,
+                self.settings.copilot_model_cheap_b,
+                self.settings.copilot_model_plan,
+                "GPT-5 mini",
+                "GPT-4.1",
+                "Claude Haiku 4.5",
+            }
+            if alias in allowed:
+                if alias == "GPT-5 mini":
+                    return self.settings.copilot_model_cheap_a
+                if alias == "GPT-4.1":
+                    return self.settings.copilot_model_cheap_b
+                if alias == "Claude Haiku 4.5":
+                    return self.settings.copilot_model_plan
+                return alias
+            if profile == "copilot_cheap_b":
+                return self.settings.copilot_model_cheap_b
+            if profile == "copilot_plan":
+                return self.settings.copilot_model_plan
+            return self.settings.copilot_model_cheap_a
+        if tool == "claude":
+            if profile == "claude_small":
+                return self.settings.claude_model_small
+            if profile in {"claude_plan", "claude_code"}:
+                return self.settings.claude_model_code
+            return self.settings.claude_model_review
+        return provider_model_alias
+
+    def _build_repo_context(self, cwd: str | None) -> dict:
+        if cwd:
+            cwd_path = Path(cwd).expanduser().resolve()
+            repo_root = self._detect_git_root(cwd_path) or cwd_path
+            recommended_dirs = self._recommended_dirs_for(repo_root, cwd_path)
+            writable_roots = [str(repo_root)]
+            if cwd_path != repo_root:
+                writable_roots.append(str(cwd_path))
+            return {
+                "repo_root": str(repo_root),
+                "recommended_dirs": recommended_dirs,
+                "writable_roots": writable_roots,
+            }
+        return {
+            "repo_root": str(self.settings.langgraph_agent_repo_root.resolve()),
+            "recommended_dirs": ["app/agents", "app/graphs", "tests"],
+            "writable_roots": [
+                str(self.settings.langgraph_agent_repo_root.resolve()),
+                str(self.settings.langgraph_agent_repo_tests_dir.resolve()),
+            ],
+        }
+
     def _prefer_langgraph_repo(self, cwd: str | None, objective: str, selected_tool: str) -> bool:
         if selected_tool == "langgraph_agent_server":
             return True
@@ -350,6 +416,24 @@ class TaskService:
             except ValueError:
                 return False
         return False
+
+    @staticmethod
+    def _detect_git_root(path: Path) -> Path | None:
+        for candidate in [path, *path.parents]:
+            if (candidate / ".git").exists():
+                return candidate
+        return None
+
+    @staticmethod
+    def _recommended_dirs_for(repo_root: Path, cwd: Path) -> list[str]:
+        if "langgraph-agent-server" in str(repo_root):
+            return ["app/agents", "app/graphs", "tests"]
+        relative = "."
+        try:
+            relative = str(cwd.relative_to(repo_root))
+        except ValueError:
+            relative = str(cwd)
+        return [relative, "src", "app", "components", "tests"]
 
     def _context_freshness(self, created_at: str) -> str:
         age = (datetime.now(timezone.utc) - datetime.fromisoformat(created_at)).total_seconds()

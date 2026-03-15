@@ -6,13 +6,26 @@ services:
       - .env
     environment:
       GCLOUD_BIN: /opt/google-cloud-host/google-cloud-sdk/bin/gcloud
+      CLOUDSDK_CONFIG: /root/.config/gcloud
+      CODEX_HOME: /root/.codex
+      GIT_CONFIG_GLOBAL: /tmp/gitconfig-global
+      PATH: /opt/google-cloud-host/google-cloud-sdk/bin:/opt/fnm-host/node-versions/v22.22.0/installation/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     ports:
       - "8090:8090"
     command: ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8090"]
     volumes:
       - ./data:/app/data
+      - /home/juan/Documents/terminal-tools/data:/home/juan/Documents/terminal-tools/data
+      - /home/juan/Documents/coolify-server:/home/juan/Documents/coolify-server
+      - /home/juan/Documents/langgraph-agent-server:/home/juan/Documents/langgraph-agent-server
+      - /home/juan/Documents/terminal-tools/scripts:/opt/terminal-tools-scripts:ro
       - /home/juan/.local/google-cloud:/opt/google-cloud-host:ro
-      - /home/juan/.config/gcloud:/root/.config/gcloud:ro
+      - /home/juan/.local/share/fnm:/opt/fnm-host:ro
+      - /home/juan/.config/gcloud:/root/.config/gcloud
+      - /home/juan/.copilot:/root/.copilot
+      - /home/juan/.codex:/root/.codex
+      - /home/juan/.ssh:/root/.ssh:ro
+      - /home/juan/Documents/ssh:/opt/git-keys:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
@@ -23,12 +36,26 @@ services:
       - .env
     environment:
       GCLOUD_BIN: /opt/google-cloud-host/google-cloud-sdk/bin/gcloud
+      CODEX_HOME: /root/.codex
+      CLOUDSDK_CONFIG: /root/.config/gcloud
+      GIT_CONFIG_GLOBAL: /tmp/gitconfig-global
+      PATH: /opt/google-cloud-host/google-cloud-sdk/bin:/opt/fnm-host/node-versions/v22.22.0/installation/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     ports:
       - "8091:8091"
     command: ["python", "-m", "app.mcp_server.server"]
     volumes:
       - ./data:/app/data
+      - /home/juan/Documents/terminal-tools/data:/home/juan/Documents/terminal-tools/data
+      - /home/juan/Documents/coolify-server:/home/juan/Documents/coolify-server
+      - /home/juan/Documents/langgraph-agent-server:/home/juan/Documents/langgraph-agent-server
+      - /home/juan/Documents/terminal-tools/scripts:/opt/terminal-tools-scripts:ro
       - /home/juan/.local/google-cloud:/opt/google-cloud-host:ro
-      - /home/juan/.config/gcloud:/root/.config/gcloud:ro
+      - /home/juan/.local/share/fnm:/opt/fnm-host:ro
+      - /home/juan/.config/gcloud:/root/.config/gcloud
+      - /home/juan/.copilot:/root/.copilot
+      - /home/juan/.codex:/root/.codex
+      - /home/juan/.ssh:/root/.ssh:ro
+      - /home/juan/Documents/ssh:/opt/git-keys:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
+

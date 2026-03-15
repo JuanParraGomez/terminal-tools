@@ -60,3 +60,15 @@ def test_blocked_pattern_wins(tmp_path: Path) -> None:
     check = svc.evaluate("/tmp/ws/my/.env", "read")
     assert check.allowed is False
     assert check.resolved_permission == "blocked"
+
+
+def test_real_policy_allows_coolify_server_repo() -> None:
+    svc = PathPolicyService(Path(__file__).resolve().parents[1] / "app" / "security" / "path_policy.yaml")
+    check = svc.evaluate("/home/juan/Documents/coolify-server", "execute")
+    assert check.allowed is True
+
+
+def test_real_policy_allows_container_runtime_logs() -> None:
+    svc = PathPolicyService(Path(__file__).resolve().parents[1] / "app" / "security" / "path_policy.yaml")
+    check = svc.evaluate("/app/data/logs/task_x.out.log", "create_file")
+    assert check.allowed is True

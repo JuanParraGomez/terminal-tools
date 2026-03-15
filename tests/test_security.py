@@ -28,3 +28,13 @@ def test_blocks_blocked_path_access() -> None:
     v = _validator()
     with pytest.raises(SecurityError):
         v.validate_command(["cat", "/home/juan/Documents/.env"], cwd=Path("/tmp"), allow_mutative=False)
+
+
+def test_allows_read_only_python_validation_command() -> None:
+    v = _validator()
+    command = [
+        "python3",
+        "-c",
+        "from pathlib import Path; required=['README.md','app.meta.yaml','deploy.meta.yaml']; missing=[x for x in required if not Path(x).exists()]; print('ok' if not missing else missing)",
+    ]
+    v.validate_command(command, cwd=Path("/home/juan/Documents/coolify-server"), allow_mutative=False)
